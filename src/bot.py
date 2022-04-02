@@ -26,7 +26,7 @@ Usage:
                 
                 super().__init__("valid/path/containing/token.txt")
 
-    * From here you can add functions to the class. Look at the parent bots __print() function, you need to use the
+    * From here you can add functions to the class. Look at the parent bots test() function, you need to use the
       exact same function attributes. The __init__ function of YourBot(Bot) class needs to register your new function.
       Use self.dispatcher.add_handler(CommandHandler(command='myfunction', callback=self.my_function))
       Now you can start the bot and send him the command /myfunction to make him execute self.my_function
@@ -40,7 +40,7 @@ Example execution of Parent Bot:
     * open a command line and change into this directory (easybot/)
     * start this bot with:
         "python3 -m venv venv && pip3 install -r requirements.txt && . venv/bin/activate && python3 bot.py"
-    * open telegram and sent your bot a message with the /print command (f.e. "/print send back this text").
+    * open telegram and sent your bot a message with the /test command (f.e. "/test send back this text").
     
 This will call the registered command handler in the __init__ function which calls the __print() function and
 executes the code inside.
@@ -66,27 +66,25 @@ class Bot:
     """
     def __init__(self, token_file="token"):
 
-        logger.info("Init ...")
+        logger.info("Creating updater and dispatcher ...")
 
-        if not os.path.isfile(token_file):
-            raise BotException("A file containing a token must be provided. File {} does not exist!".format(token_file))
+        self.updater, self.dispatcher = self.__register_bot(token_file)  # The actual updater and dispatcher
 
-        self.__updater, self.__dispatcher = self.__register_bot(token_file)  # The actual updater and dispatcher
+        logger.info("Finished.\n Registering test handler ...")
 
-        logger.info("Updater and Dispatcher created ...")
+        self.dispatcher.add_handler(CommandHandler(command='test', callback=self.test))
 
-        self.dispatcher.add_handler(CommandHandler(command='print', callback=self.__print))
+        logger.info("Finished.")
 
-    @property
-    def updater(self):
-        return self.__updater
+    def start_bot(self):
+        """ Starts the Bot. """
+        logger.info("Starting bot ...")
 
-    @property
-    def dispatcher(self):
-        return self.__dispatcher
+        self.updater.start_polling()
+        self.updater.idle()
 
     @staticmethod
-    def __print(update, context):
+    def test(update, context):
         """ This is an example method to register to the dispatcher.
             Sends all arguments received to the chat the message was received.
             See https://python-telegram-bot.readthedocs.io/en/stable/telegram.ext.callbackcontext.html for details on
@@ -101,13 +99,6 @@ class Bot:
 
         return
 
-    def start_bot(self):
-        """ Starts the Bot. """
-        logger.info("Starting bot ...")
-
-        self.updater.start_polling()
-        self.updater.idle()
-
     @staticmethod
     def __register_bot(token_file):
         """ Registers the bot using a token. You can receive your own token from @BotFather (telegram).
@@ -120,8 +111,8 @@ class Bot:
         try:
             with open(token_file, 'r') as file:
                 token = file.read().strip()
-        except FileNotFoundError as exc:
-            raise BotException(exc)
+        except FileNotFoundError as exception:
+            raise BotException(exception)
 
         if token == "" or len(token) != 46:
             raise BotException(f"The token {token} provided by {os.path.abspath(token_file)} seems to be corrupted." 
