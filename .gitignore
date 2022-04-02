@@ -1,0 +1,8 @@
+*token*
+*credentials*
+token
+credentials
+venv
+*.whl
+dist/
+build/
